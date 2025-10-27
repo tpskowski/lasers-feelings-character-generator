@@ -141,7 +141,7 @@ export const CharacterEditor = () => {
                     </output>
                   </div>
                   <p id="number-help" className="text-xs text-slate-500">
-                    Pick 2–5. Low numbers favor LASERS (logic, precision). High numbers favor FEELINGS (passion, intuition).
+                    Pick 2-5. Low numbers favor LASERS (logic, precision). High numbers favor FEELINGS (passion, intuition).
                   </p>
                 </div>
               </div>
@@ -284,7 +284,7 @@ export const CharacterEditor = () => {
                   onChange={(event) => handleNotes(event.target.value)}
                   rows={8}
                   className="mt-1 h-full w-full rounded-md border border-slate-300 bg-white px-3 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-slate-700 dark:bg-slate-900"
-                  placeholder="Allies, ship quirks, memorable quotes…"
+                  placeholder="Allies, ship quirks, memorable quotes..."
                 />
               </label>
             </div>
@@ -330,7 +330,7 @@ export const CharacterEditor = () => {
                     onChange={(event) => setImportJson(event.target.value)}
                     rows={6}
                     className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-slate-700 dark:bg-slate-900"
-                    placeholder="{\n  \"name\": \"Nova\", ...\n}"
+                    placeholder={`{\n  "name": "Nova", ...\n}`}
                   />
                 </label>
                 <div className="flex items-center gap-2">
