@@ -1,5 +1,8 @@
 export type LFNumber = 2 | 3 | 4 | 5;
 
+export const CUSTOM_STYLE_ID = 'custom-style';
+export const CUSTOM_ROLE_ID = 'custom-role';
+
 export type GoalValue = {
   type: 'preset' | 'custom';
   value: string;
@@ -19,7 +22,9 @@ export type Character = {
   updatedAt: string;
   name: string;
   styleId: string;
+  styleCustomLabel?: string;
   roleId: string;
+  roleCustomLabel?: string;
   number: LFNumber;
   goal: GoalValue;
   gearNotes?: string;

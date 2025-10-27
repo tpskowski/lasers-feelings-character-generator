@@ -8,7 +8,15 @@ import {
   useState
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Character, CharacterIndexRecord, GoalValue, Library, Option } from '@/types/models';
+import {
+  Character,
+  CharacterIndexRecord,
+  GoalValue,
+  Library,
+  Option,
+  CUSTOM_STYLE_ID,
+  CUSTOM_ROLE_ID
+} from '@/types/models';
 import { defaultLibrary } from '@/lib/defaults';
 import { storage } from '@/utils/storage';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
@@ -52,6 +60,33 @@ const createInitialCharacter = (library: Library): Character => {
   };
 };
 
+const findOptionLabel = (options: Option[], id: string): string => {
+  const match = options.find((option) => option.id === id);
+  return match?.label ?? 'Unknown';
+};
+
+const resolveStyleLabel = (character: Character, library: Library): string => {
+  if (character.styleId === CUSTOM_STYLE_ID) {
+    return character.styleCustomLabel?.trim() || 'Custom Style';
+  }
+  const label = findOptionLabel(library.styles, character.styleId);
+  if (label === 'Unknown' && character.styleCustomLabel) {
+    return character.styleCustomLabel;
+  }
+  return label;
+};
+
+const resolveRoleLabel = (character: Character, library: Library): string => {
+  if (character.roleId === CUSTOM_ROLE_ID) {
+    return character.roleCustomLabel?.trim() || 'Custom Role';
+  }
+  const label = findOptionLabel(library.roles, character.roleId);
+  if (label === 'Unknown' && character.roleCustomLabel) {
+    return character.roleCustomLabel;
+  }
+  return label;
+};
+
 const makeIndexRecord = (
   character: Character,
   library: Library
@@ -59,15 +94,10 @@ const makeIndexRecord = (
   id: character.id,
   name: character.name || 'Untitled Character',
   updatedAt: character.updatedAt,
-  styleLabel: findOptionLabel(library.styles, character.styleId),
-  roleLabel: findOptionLabel(library.roles, character.roleId),
+  styleLabel: resolveStyleLabel(character, library),
+  roleLabel: resolveRoleLabel(character, library),
   portraitThumb: character.portrait?.dataUrl
 });
-
-const findOptionLabel = (options: Option[], id: string): string => {
-  const match = options.find((option) => option.id === id);
-  return match?.label ?? 'Unknown';
-};
 
 const parseCharacterJson = (json: string): Character | undefined => {
   try {

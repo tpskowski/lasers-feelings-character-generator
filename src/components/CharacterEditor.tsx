@@ -2,9 +2,10 @@ import { FormEvent, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { useCharacter } from '@/context/CharacterContext';
 import { useLibrary } from '@/context/LibraryContext';
-import { LFNumber, Option } from '@/types/models';
+import { CUSTOM_ROLE_ID, CUSTOM_STYLE_ID, LFNumber, Option } from '@/types/models';
 import { PortraitUploader } from './PortraitUploader';
 import { PDFExportButton } from './PDFExportButton';
+import { CustomOptionModal } from './CustomOptionModal';
 import { uniformGear } from '@/lib/defaults';
 
 const pdfTargetId = 'character-sheet-preview';
@@ -18,11 +19,32 @@ const optionButtonClass = (active: boolean, color?: string) =>
     color && !active && 'border-transparent'
   );
 
+type CustomModalType = 'style' | 'role' | 'goal';
+
+const modalTitles: Record<CustomModalType, string> = {
+  style: 'Create Custom Style',
+  role: 'Create Custom Role',
+  goal: 'Create Custom Goal'
+};
+
+const modalDescriptions: Record<CustomModalType, string> = {
+  style: 'Name a unique style for this character.',
+  role: 'Name a unique role for this character.',
+  goal: 'Describe what your character is striving for.'
+};
+
+const modalPlaceholders: Record<CustomModalType, string> = {
+  style: 'Space Cowboy',
+  role: 'Chief Problem Solver',
+  goal: 'Chart their own destiny'
+};
+
 export const CharacterEditor = () => {
   const { character, updateCharacter, createCharacter, saveAsNew, list, importCharacter } = useCharacter();
   const { library } = useLibrary();
   const [importJson, setImportJson] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [modalState, setModalState] = useState<{ type: CustomModalType; initialValue: string } | null>(null);
   const currentExport = useMemo(() => JSON.stringify(character, null, 2), [character]);
 
   const setStyle = (option: Option) => {
@@ -42,7 +64,46 @@ export const CharacterEditor = () => {
   };
 
   const handleGoalCustom = (value: string) => {
-    updateCharacter((prev) => ({ ...prev, goal: { type: 'custom', value } }));
+    const trimmed = value.trim();
+    updateCharacter((prev) => ({ ...prev, goal: { type: 'custom', value: trimmed } }));
+  };
+
+  const openCustomModal = (type: CustomModalType) => {
+    let initialValue = '';
+    if (type === 'style') {
+      initialValue = character.styleCustomLabel ?? '';
+    } else if (type === 'role') {
+      initialValue = character.roleCustomLabel ?? '';
+    } else if (character.goal.type === 'custom') {
+      initialValue = character.goal.value;
+    }
+    setModalState({ type, initialValue });
+  };
+
+  const closeModal = () => {
+    setModalState(null);
+  };
+
+  const handleModalSubmit = (value: string) => {
+    if (!modalState) return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    if (modalState.type === 'style') {
+      updateCharacter((prev) => ({
+        ...prev,
+        styleId: CUSTOM_STYLE_ID,
+        styleCustomLabel: trimmed
+      }));
+    } else if (modalState.type === 'role') {
+      updateCharacter((prev) => ({
+        ...prev,
+        roleId: CUSTOM_ROLE_ID,
+        roleCustomLabel: trimmed
+      }));
+    } else {
+      handleGoalCustom(trimmed);
+    }
+    setModalState(null);
   };
 
   const handleGearNotes = (value: string) => {
@@ -72,9 +133,17 @@ export const CharacterEditor = () => {
   const availableStyles = library.styles;
   const availableRoles = library.roles;
   const availableGoals = library.goals;
+  const customStyleLabel = character.styleCustomLabel?.trim() ?? '';
+  const customRoleLabel = character.roleCustomLabel?.trim() ?? '';
+  const customGoalLabel = character.goal.type === 'custom' ? character.goal.value.trim() : '';
+  const modalType = modalState?.type ?? null;
+  const modalTitle = modalType ? modalTitles[modalType] : '';
+  const modalDescription = modalType ? modalDescriptions[modalType] : undefined;
+  const modalPlaceholder = modalType ? modalPlaceholders[modalType] : undefined;
 
   return (
-    <div className="space-y-8">
+    <>
+      <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Character Builder</h1>
@@ -180,6 +249,14 @@ export const CharacterEditor = () => {
                   {option.label}
                 </button>
               ))}
+              <button
+                type="button"
+                className={optionButtonClass(character.styleId === CUSTOM_STYLE_ID)}
+                onClick={() => openCustomModal('style')}
+                aria-pressed={character.styleId === CUSTOM_STYLE_ID}
+              >
+                {customStyleLabel || 'Custom'}
+              </button>
             </div>
           </section>
 
@@ -204,6 +281,14 @@ export const CharacterEditor = () => {
                   {option.label}
                 </button>
               ))}
+              <button
+                type="button"
+                className={optionButtonClass(character.roleId === CUSTOM_ROLE_ID)}
+                onClick={() => openCustomModal('role')}
+                aria-pressed={character.roleId === CUSTOM_ROLE_ID}
+              >
+                {customRoleLabel || 'Custom'}
+              </button>
             </div>
           </section>
 
@@ -234,24 +319,12 @@ export const CharacterEditor = () => {
               <button
                 type="button"
                 className={optionButtonClass(character.goal.type === 'custom')}
-                onClick={() => handleGoalCustom(character.goal.type === 'custom' ? character.goal.value : '')}
+                onClick={() => openCustomModal('goal')}
                 aria-pressed={character.goal.type === 'custom'}
               >
-                Custom Goal
+                {customGoalLabel || 'Custom'}
               </button>
             </div>
-            {character.goal.type === 'custom' && (
-              <label className="block text-sm">
-                <span className="font-medium">Describe your character goal</span>
-                <input
-                  type="text"
-                  value={character.goal.value}
-                  onChange={(event) => handleGoalCustom(event.target.value)}
-                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-slate-700 dark:bg-slate-900"
-                  placeholder="Chart their own destiny"
-                />
-              </label>
-            )}
           </section>
 
           <section aria-labelledby="gear-section" className="space-y-4">
@@ -358,5 +431,16 @@ export const CharacterEditor = () => {
         </div>
       </div>
     </div>
+      <CustomOptionModal
+        open={modalState !== null}
+        title={modalTitle}
+        description={modalDescription}
+        placeholder={modalPlaceholder}
+        initialValue={modalState?.initialValue ?? ''}
+        confirmLabel="Save"
+        onClose={closeModal}
+        onSubmit={handleModalSubmit}
+      />
+    </>
   );
 };
